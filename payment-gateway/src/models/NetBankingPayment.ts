@@ -2,32 +2,14 @@ import { Transaction } from "./Transaction";
 import { BankAPI } from "../bank/BankAPI";
 import { TransactionLogger } from "../utils/TransactionLogger";
 
-/**
- * ┌─────────────────────────────────────────────────────────────────┐
- * │ NetBankingPayment — Processes payments via Net Banking          │
- * ├─────────────────────────────────────────────────────────────────┤
- * │ OOP: POLYMORPHISM                                              │
- * │   Overrides processPayment() from Transaction with NetBanking- │
- * │   specific logic. Same method name, DIFFERENT behavior from    │
- * │   UPIPayment — this is runtime polymorphism in action.         │
- * ├─────────────────────────────────────────────────────────────────┤
- * │ OOP: INHERITANCE                                               │
- * │   Extends Transaction → which extends BaseTransaction.         │
- * │   Full inheritance chain: BaseTransaction → Transaction →      │
- * │   NetBankingPayment.                                           │
- * ├─────────────────────────────────────────────────────────────────┤
- * │ SOLID: Liskov Substitution Principle (LSP)                     │
- * │   NetBankingPayment can REPLACE Transaction ANYWHERE without   │
- * │   breaking the system — just like UPIPayment can.              │
- * └─────────────────────────────────────────────────────────────────┘
- */
+
 export class NetBankingPayment extends Transaction {
 
-    // ── NetBanking-specific fields ──────────────────────────────────
+    
     private _bankCode: string;
     private _ifscCode: string;
 
-    // ── Constructor ─────────────────────────────────────────────────
+    
     constructor(txnId: string, amount: number, senderBank: string, receiverBank: string) {
         super(txnId, amount, senderBank, receiverBank);   // Inheritance
         this._bankCode = "";
@@ -35,7 +17,7 @@ export class NetBankingPayment extends Transaction {
         this.type = "NETBANKING";    // Tag the transaction type
     }
 
-    // ── NetBanking-specific getters/setters ─────────────────────────
+    
     get bankCode(): string {
         return this._bankCode;
     }
@@ -50,23 +32,7 @@ export class NetBankingPayment extends Transaction {
         this._ifscCode = value;
     }
 
-    // ── POLYMORPHISM: Override processPayment() ─────────────────────
-    /**
-     * NetBanking-specific payment processing.
-     * Steps:
-     *   1. Verify IFSC code (simulated)
-     *   2. Validate sender & receiver accounts
-     *   3. Debit sender's account via BankAPI
-     *   4. Credit receiver's account via BankAPI
-     *   5. Handle rollback if credit fails
-     *
-     * DIFFERENCE FROM UPI:
-     *   - Net Banking verifies IFSC code before processing
-     *   - Net Banking uses bank code for routing (simulated)
-     *   - Processing messages are different (demonstrates polymorphism)
-     *
-     * @returns true if NetBanking payment was successful
-     */
+    
     override processPayment(): boolean {
         console.log("");
         console.log("  ╔══════════════════════════════════════════════════╗");
@@ -79,14 +45,13 @@ export class NetBankingPayment extends Transaction {
         console.log(`    → Receiver Acc : ${this.receiverBank}`);
         console.log("");
 
-        // Step 1: Verify IFSC Code (simulated — always valid if non-empty)
         if (!this._ifscCode || this._ifscCode.length === 0) {
             console.log("    ⚠  No IFSC code provided. Using default routing...");
         } else {
             console.log(`    ✓ IFSC Code ${this._ifscCode} verified.`);
         }
 
-        // Step 2: Validate sender account
+        
         if (!BankAPI.validateAccount(this.senderBank)) {
             this.status = "FAILED";
             console.log("    ✗ Sender account validation FAILED!");
@@ -94,7 +59,7 @@ export class NetBankingPayment extends Transaction {
             return false;
         }
 
-        // Step 3: Validate receiver account
+
         if (!BankAPI.validateAccount(this.receiverBank)) {
             this.status = "FAILED";
             console.log("    ✗ Receiver account validation FAILED!");
@@ -102,11 +67,11 @@ export class NetBankingPayment extends Transaction {
             return false;
         }
 
-        // Step 4: Debit sender's account
+   
         console.log("    ⏳ Initiating inter-bank transfer via NEFT...");
         if (BankAPI.debitAmount(this.senderBank, this.amount)) {
 
-            // Step 5: Credit receiver's account
+   
             if (BankAPI.creditAmount(this.receiverBank, this.amount)) {
                 this.status = "SUCCESS";
                 console.log("    ✓ Net Banking Payment Successful! ✅");
